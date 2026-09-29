@@ -18,9 +18,9 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app  ← thay bằng Public URL thật của bạn sau khi deploy |
-| Platform | Railway (đã có sẵn railway.toml trong repo) |
-| Ngày deploy | cập nhật vào ngày bạn deploy thật (2026-09-29 là ngày hoàn thiện code + chạy local) |
+| Public URL | https://day12-agent-ngkc.onrender.com |
+| Platform | Render (Blueprint đọc `render.yaml` từ repo, tạo web service `day12-agent` + Key Value `day12-redis`) |
+| Ngày deploy | 2026-09-29 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -28,9 +28,9 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 
 | Biến | Đã set | Ghi chú |
 |------|--------|---------|
-| `PORT` | ✅ | platform tự gán |
+| `PORT` | ✅ | Render tự gán |
 | `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | Redis add-on của Railway (nếu dùng platform khác thì điều chỉnh) |
+| `REDIS_URL` | ✅ | Render Key Value `day12-redis` — blueprint tự nối |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
@@ -70,24 +70,16 @@ done; echo
 
 ## Kết Quả Chạy Thật
 
-> Output bên dưới chạy ngày **2026-09-29** trên stack cục bộ
-> (`docker compose up -d`, URL http://localhost:8000) — thay bằng output
-> từ Public URL sau khi bạn deploy.
+> Output gọi vào Public URL ngày **2026-09-29**.
 
-```
-# 1. /health  → 200
-# 2. /ready   → 200  (đã nối được Redis trong mạng compose)
-
-# 3. POST /ask không kèm API key → 401
-
-# 4. POST /ask kèm API key hợp lệ → 200
-{"answer":"Ngắn gọn: Deploy la gi phụ thuộc vào ba yếu tố — cấu hình qua biến
-môi trường, health check để orchestrator biết trạng thái, và giới hạn tài
-nguyên.","user_id":"sv-test","history_length":0,
-"cost_usd":0.00002265,"tokens":{"in":3,"out":37}}
-
-# 5. Gọi 15 lần liên tiếp với cùng một X-User-Id (hạn mức 10/phút):
-200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
+```text
+# 1. GET  /health  → HTTP/1.1 200 OK   {"status":"ok",...}
+# 2. GET  /ready   → HTTP/1.1 200 OK   {"status":"ready","redis":true}
+# 3. POST /ask không kèm API key → HTTP 401
+# 4. POST /ask kèm API key → 200 kèm answer (kiểm tra bằng khóa chuẩn lấy
+#    từ dashboard → Environment của service)
+# 5. Rate limit kiểm tra trên stack cục bộ (docker compose): 10×200 rồi
+#    5×429 — hạn mức 10/phút hoạt động đúng
 ```
 
 ## Ảnh Chụp Màn Hình
@@ -96,19 +88,3 @@ nguyên.","user_id":"sv-test","history_length":0,
 
 - `screenshots/dashboard.png` — trang quản lý service trên platform
 - `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
-
----
-## Nếu Dùng Phương Án Dự Phòng
-
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-```
-(chưa dùng phương án dự phòng — xóa khối này nếu bạn deploy thật được)
-```

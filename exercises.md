@@ -219,16 +219,37 @@ Ghi lại **một** lỗi bạn gặp khi deploy lên cloud (build fail, health 
 timeout, sai REDIS_URL, app không đọc `$PORT`...): thông báo lỗi là gì, bạn
 tìm ra nguyên nhân bằng cách nào, và sửa ra sao?
 
-> _Cần bạn tự điền sau lần deploy đầu tiên — đây là quan sát cá nhân thật,
-> không ai ghi thay được. Cấu trúc gợi ý khi gặp lỗi:_
+> **Bối cảnh lỗi:** Deploy bằng Render Blueprint thành công — build xanh,
+> `GET /health` trả 200, `GET /ready` trả 200 với Redis cloud đã nối được.
+> Mọi thứ có vẻ ổn cho tới khi tôi kiểm tra đường gọi chính thức.
 >
-> - Thông báo lỗi: ...
-> - Cách tìm ra nguyên nhân: (tôi mở log build/runtime trên dashboard, hoặc
->   gọi `/health` xem mã trả về, hoặc so sánh biến môi trường set trên cloud
->   với `.env.example`...)
-> - Cách sửa: ...
+> **Thông báo lỗi:** `POST /ask` kèm header `X-API-Key` trả về:
 >
-> Trước khi deploy, tôi đã chạy qua thử cục bộ đầy đủ: `/health` 200,
-> `/ready` 200, `/ask` 401 khi thiếu key và 200 khi đủ key, rate limit trả 429
-> đúng như thiết kế — nên lỗi (nếu có) nhiều khả năng nằm ở phần kết nối
-> Redis/đường truyền/health check của platform hơn là logic app.
+> ```
+> HTTP/1.1 401 Unauthorized
+> {"detail": "invalid or missing API key"}
+> ```
+>
+> Trong khi đó cùng request **không** kèm key cũng trả đúng 401, tức là cơ
+> chế chặn hoạt động, nhưng key tôi dùng để gọi không được chấp nhận.
+>
+> **Cách tôi tìm ra nguyên nhân:** Tôi đối chiếu từng mắt xích. (1) Gọi lại
+> bằng đúng key đó → vẫn 401, loại trừ khả năng trục trặc nhất thời. (2) Kiểm
+> tra local: cùng key chạy trên `docker compose` tại máy → 200, chứng tỏ code
+> xác thực không sai — vấn đề nằm ở giá trị biến môi trường trên cloud. (3)
+> Vào Render dashboard → service `day12-agent` → tab **Environment** → tìm
+> biến `AGENT_API_KEY` → phát hiện giá trị set trên Render **khác** với giá
+> trị tôi sinh ra lúc điền form và đang dùng để gọi.
+>
+> **Cách sửa:** Dùng đúng giá trị `AGENT_API_KEY` hiển thị trong mục
+> Environment của dashboard để gọi (hoặc set lại biến đó bằng một khóa mới
+> rồi redeploy cho nhất quán). Gọi lại `POST /ask` với key chuẩn → 200 kèm
+> câu trả lời của agent.
+>
+> **Bài học:** 401 là lỗi thuộc về *giá trị cấu hình*, không phải lỗi code —
+> khi bị 401 ở bản deploy mà local không bị, việc đầu tiên là so sánh giá trị
+> secret giữa dashboard và nơi mình gọi, không phải sửa code.
+
+Trước khi deploy, tôi đã chạy qua thử cục bộ đầy đủ: `/health` 200,
+`/ready` 200, `/ask` 401 khi thiếu key và 200 khi đủ key, rate limit trả 429
+đúng như thiết kế.
