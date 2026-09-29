@@ -1,0 +1,53 @@
+# BONUS — CI/CD: mỗi lần push, GitHub tự chạy test → build image → chỉ deploy
+# nhánh main khi test và build đã xanh.
+#
+# Lưu ý:
+#   - Bỏ test_cp5.py khỏi CI vì nó gọi vào một bản deploy sống (sẽ luôn đỏ
+#     trong môi trường CI).
+#   - Token deploy KHÔNG nằm trong file này: đặt RAILWAY_TOKEN trong
+#     Settings → Secrets and variables → Actions của repo.
+#   - Action được ghim theo tag phiên bản (v4/v5/v6), không dùng @main/@latest.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v --ignore=tests/test_cp5.py -m "not docker"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+
+  deploy:
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy lên Railway (bỏ qua khi chưa cấu hình token)
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "Chưa set RAILWAY_TOKEN trong GitHub Secrets — bỏ qua bước deploy."
+            exit 0
+          fi
+          echo "RAILWAY_TOKEN đã được cấu hình (giá trị không in ra log)."
+          npm install -g @railway/cli
+          railway up --service day12-agent
