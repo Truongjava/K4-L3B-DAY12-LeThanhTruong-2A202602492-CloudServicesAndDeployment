@@ -35,10 +35,27 @@ services:
       timeout: 3s
       retries: 5
 
-  # TODO (CP2): khai báo service `agent` ở đây
-  # agent:
-  #   build: .
-  #   ...
+  # CP2 — service `agent`: build từ Dockerfile của repo.
+  #   - Môi trường dùng nội suy ${AGENT_API_KEY}: compose đọc file .env
+  #     cùng thư mục, không hardcode secret vào file này
+  #   - REDIS_URL trỏ tới tên service `redis` (hostname trong mạng compose)
+  agent:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      AGENT_API_KEY: ${AGENT_API_KEY}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
   redis-data:
