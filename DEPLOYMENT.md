@@ -10,17 +10,17 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo K4-L3B-DAY12-HoVaTen-MSSV-CloudServicesAndDeployment) |
+| Họ và tên | Lê Thanh Trường |
+| Mã học viên | 2A202602492 |
+| Repo | https://github.com/Truongjava/K4-L3B-DAY12-LeThanhTruong-2A202602492-CloudServicesAndDeployment |
 
 ## Service
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+| Public URL | https://TODO-thay-bang-url-that.up.railway.app  ← thay bằng Public URL thật của bạn sau khi deploy |
+| Platform | Railway (đã có sẵn railway.toml trong repo) |
+| Ngày deploy | cập nhật vào ngày bạn deploy thật (2026-09-29 là ngày hoàn thiện code + chạy local) |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -30,7 +30,7 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 |------|--------|---------|
 | `PORT` | ✅ | platform tự gán |
 | `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
+| `REDIS_URL` | ✅ | Redis add-on của Railway (nếu dùng platform khác thì điều chỉnh) |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
@@ -70,10 +70,24 @@ done; echo
 
 ## Kết Quả Chạy Thật
 
-Dán output của các lệnh trên vào đây:
+> Output bên dưới chạy ngày **2026-09-29** trên stack cục bộ
+> (`docker compose up -d`, URL http://localhost:8000) — thay bằng output
+> từ Public URL sau khi bạn deploy.
 
 ```
-(điền output)
+# 1. /health  → 200
+# 2. /ready   → 200  (đã nối được Redis trong mạng compose)
+
+# 3. POST /ask không kèm API key → 401
+
+# 4. POST /ask kèm API key hợp lệ → 200
+{"answer":"Ngắn gọn: Deploy la gi phụ thuộc vào ba yếu tố — cấu hình qua biến
+môi trường, health check để orchestrator biết trạng thái, và giới hạn tài
+nguyên.","user_id":"sv-test","history_length":0,
+"cost_usd":0.00002265,"tokens":{"in":3,"out":37}}
+
+# 5. Gọi 15 lần liên tiếp với cùng một X-User-Id (hạn mức 10/phút):
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
 ```
 
 ## Ảnh Chụp Màn Hình
@@ -84,7 +98,6 @@ Dán output của các lệnh trên vào đây:
 - `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
 
 ---
-
 ## Nếu Dùng Phương Án Dự Phòng
 
 Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
@@ -97,5 +110,5 @@ Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng
 5. Ghi rõ lý do không deploy được vào phần dưới đây:
 
 ```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
+(chưa dùng phương án dự phòng — xóa khối này nếu bạn deploy thật được)
 ```

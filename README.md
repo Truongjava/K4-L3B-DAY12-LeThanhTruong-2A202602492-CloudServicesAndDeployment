@@ -1,5 +1,8 @@
 # K4 — Level 3B, Ngày 12: Hạ Tầng Cloud & Deployment (240 phút)
 
+<!-- BONUS CI/CD — sửa github.com/Truongjava nếu username GitHub của bạn khác -->
+![CI](https://github.com/Truongjava/K4-L3B-DAY12-LeThanhTruong-2A202602492-CloudServicesAndDeployment/actions/workflows/ci.yml/badge.svg)
+
 Đưa một AI agent từ `localhost:8000` lên một địa chỉ công khai mà người khác
 gọi được, có bảo mật, có giới hạn chi phí, và không sập khi bạn deploy bản mới.
 
